@@ -1,39 +1,105 @@
+# Four independent GPU apps, one per container. ai-toolkit starts with plain
+# `docker compose up`; the ComfyUI apps are behind profiles so heavyweight
+# services only start when asked for (make krea2 / ideogram / ltx).
+#
+# Legacy nvidia runtime instead of `gpus: all`: the latter reads the CDI spec
+# (/etc/cdi/nvidia.yaml), which goes stale on every driver update; the runtime
+# enumerates driver files at container start instead.
+
+x-gpu: &gpu
+  runtime: nvidia
+  # PyTorch dataloaders use shared memory; the docker default (64MB) is far
+  # too small.
+  ipc: host
+  restart: unless-stopped
+
 services:
   ai-toolkit:
+    <<: *gpu
     build:
-      context: .
+      context: ./ai-toolkit
       args:
         AI_TOOLKIT_REF: ${AI_TOOLKIT_REF:-main}
         CUDA_STREAM: ${CUDA_STREAM:-cu128}
         CACHEBUST: ${CACHEBUST:-0}
     image: ai-toolkit:local
     container_name: ai-toolkit
-    # Legacy nvidia runtime instead of `gpus: all`: the latter reads the CDI
-    # spec (/etc/cdi/nvidia.yaml), which goes stale on every driver update;
-    # the runtime enumerates driver files at container start instead.
-    runtime: nvidia
-    # PyTorch dataloader workers use shared memory; the docker default (64MB)
-    # is far too small for image training batches.
-    ipc: host
     ports:
-      - "${UI_PORT:-8675}:8675"
+      - "${AI_TOOLKIT_PORT:-8675}:8675"
     volumes:
-      # Job db + anything not covered by a more specific mount below.
-      - ./data:/data
-      # Training inputs/results — local by default, point at the NAS in .env
-      # if full-checkpoint outputs get big.
-      - ${DATASETS_DIR:-./data/datasets}:/data/datasets
-      - ${OUTPUTS_DIR:-./data/outputs}:/data/outputs
-      # Downloaded base models (HF cache) — large, kept on the NAS.
-      - ${HF_CACHE_DIR:-./data/hf-cache}:/data/hf-cache
-      # torch.hub + misc library caches (aux models like CLIP/LPIPS) — NAS.
-      - ${AUX_CACHE_DIR:-./data/cache}:/data/cache
-      # Existing ComfyUI models, read-only, so training configs can point at
-      # checkpoints you already have (visible as /comfyui-models in the UI).
+      - ./data/ai-toolkit:/data
+      - ${DATASETS_DIR:-./data/ai-toolkit/datasets}:/data/datasets
+      - ${OUTPUTS_DIR:-./data/ai-toolkit/outputs}:/data/outputs
+      - ${HF_CACHE_DIR:-./data/ai-toolkit/hf-cache}:/data/hf-cache
+      - ${AUX_CACHE_DIR:-./data/ai-toolkit/cache}:/data/cache
       - ${COMFYUI_MODELS_DIR:-/mnt/gigachad/comfyui/models}:/comfyui-models:ro
     environment:
       NVIDIA_VISIBLE_DEVICES: all
       HF_TOKEN: ${HF_TOKEN:-}
-      # Optional UI password. Leave empty for no auth (fine on localhost).
       AI_TOOLKIT_AUTH: ${AI_TOOLKIT_AUTH:-}
-    restart: unless-stopped
+
+  krea2:
+    <<: *gpu
+    profiles: [krea2]
+    build:
+      context: ./comfyui
+      args:
+        APP: krea2
+        COMFY_REF: ${COMFY_REF_KREA2:-master}
+        CACHEBUST: ${CACHEBUST:-0}
+    image: comfyui-krea2:local
+    container_name: comfyui-krea2
+    ports:
+      - "${KREA2_PORT:-8188}:8188"
+    volumes:
+      - ${COMFYUI_MODELS_DIR:-/mnt/gigachad/comfyui/models}:/comfyui/models
+      - ./data/krea2:/data
+      - ${AUX_CACHE_DIR:-./data/krea2/cache}:/data/cache
+    environment:
+      NVIDIA_VISIBLE_DEVICES: all
+      HF_TOKEN: ${HF_TOKEN:-}
+
+  ideogram:
+    <<: *gpu
+    profiles: [ideogram]
+    build:
+      context: ./comfyui
+      args:
+        APP: ideogram
+        COMFY_REF: ${COMFY_REF_IDEOGRAM:-master}
+        CACHEBUST: ${CACHEBUST:-0}
+    image: comfyui-ideogram:local
+    container_name: comfyui-ideogram
+    ports:
+      - "${IDEOGRAM_PORT:-8189}:8188"
+    volumes:
+      - ${COMFYUI_MODELS_DIR:-/mnt/gigachad/comfyui/models}:/comfyui/models
+      - ./data/ideogram:/data
+      - ${AUX_CACHE_DIR:-./data/ideogram/cache}:/data/cache
+      # Template reference images for the bundled Ultra workflow (extracted
+      # from docs/reference/IDEOGRAM-TEMPLATES.zip).
+      - ${IDEOGRAM_TEMPLATES_DIR:-/mnt/gigachad/comfyui/ideogram-templates}:/data/input/templates:ro
+    environment:
+      NVIDIA_VISIBLE_DEVICES: all
+      HF_TOKEN: ${HF_TOKEN:-}
+
+  ltx:
+    <<: *gpu
+    profiles: [ltx]
+    build:
+      context: ./comfyui
+      args:
+        APP: ltx
+        COMFY_REF: ${COMFY_REF_LTX:-v0.21.1}
+        CACHEBUST: ${CACHEBUST:-0}
+    image: comfyui-ltx:local
+    container_name: comfyui-ltx
+    ports:
+      - "${LTX_PORT:-8190}:8188"
+    volumes:
+      - ${COMFYUI_MODELS_DIR:-/mnt/gigachad/comfyui/models}:/comfyui/models
+      - ./data/ltx:/data
+      - ${AUX_CACHE_DIR:-./data/ltx/cache}:/data/cache
+    environment:
+      NVIDIA_VISIBLE_DEVICES: all
+      HF_TOKEN: ${HF_TOKEN:-}

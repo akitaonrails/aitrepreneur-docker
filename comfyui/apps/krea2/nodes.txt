@@ -1,0 +1,11 @@
+# <folder> <git-url> [git-ref]
+# From KREA2_ULTRA-AUTO_INSTALL-RUNPOD-V2.sh. The reference script's
+# REQUIRED_NODES listed ComfyUI-ConditioningKrea2Rebalance but never cloned
+# it (it clones Krea2T-Enhancer instead); here every cloned node also gets
+# its requirements installed, fixing that mismatch.
+ComfyUI-Manager https://github.com/ltdrdata/ComfyUI-Manager.git
+rgthree-comfy https://github.com/rgthree/rgthree-comfy.git
+ComfyUI-KJNodes https://github.com/kijai/ComfyUI-KJNodes.git
+ComfyUI_essentials https://github.com/cubiq/ComfyUI_essentials.git
+ComfyUI-RBG-SmartSeedVariance https://github.com/RamonGuthrie/ComfyUI-RBG-SmartSeedVariance.git
+ComfyUI-Krea2T-Enhancer https://github.com/capitan01R/ComfyUI-Krea2T-Enhancer.git

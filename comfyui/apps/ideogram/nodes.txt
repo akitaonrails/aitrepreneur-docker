@@ -1,0 +1,6 @@
+# <folder> <git-url> [git-ref]
+# From IDEOGRAM_ULTRA-AUTO_INSTALL-RUNPOD.sh
+ComfyUI-Manager https://github.com/ltdrdata/ComfyUI-Manager.git
+rgthree-comfy https://github.com/rgthree/rgthree-comfy.git
+ComfyUI-KJNodes https://github.com/kijai/ComfyUI-KJNodes.git
+ComfyUI_essentials https://github.com/cubiq/ComfyUI_essentials.git

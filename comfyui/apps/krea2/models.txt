@@ -1,0 +1,5 @@
+# <path relative to models/> <url>
+text_encoders/qwen3vl_4b_fp8_scaled.safetensors https://huggingface.co/Aitrepreneur/FLX/resolve/main/qwen3vl_4b_fp8_scaled.safetensors?download=true
+vae/qwen_image_vae.safetensors https://huggingface.co/Aitrepreneur/FLX/resolve/main/qwen_image_vae.safetensors?download=true
+diffusion_models/krea2_turbo_fp8.safetensors https://huggingface.co/Aitrepreneur/FLX/resolve/main/krea2_turbo_fp8.safetensors?download=true
+loras/krea2_turbo_lora_rank_64_bf16.safetensors https://huggingface.co/Aitrepreneur/FLX/resolve/main/krea2_turbo_lora_rank_64_bf16.safetensors?download=true

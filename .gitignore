@@ -3,3 +3,6 @@
 
 # Runtime state: datasets, outputs, job db, HF model cache (can be huge)
 /data/
+
+# Large binary bundle; extracted to the NAS (see docs/reference/README.md)
+docs/reference/IDEOGRAM-TEMPLATES.zip

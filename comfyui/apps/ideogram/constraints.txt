@@ -1,0 +1,5 @@
+# Pins from IDEOGRAM_ULTRA-AUTO_INSTALL-RUNPOD.sh (torch lines are prepended
+# from the Dockerfile ARGs at build time). The reference script froze its
+# whole baseline as constraints; the load-bearing pins were opencv/pillow.
+opencv-python-headless==4.12.0.88
+Pillow>=11.0.0

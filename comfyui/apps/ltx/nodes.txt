@@ -1,0 +1,17 @@
+# <folder> <git-url> [git-ref]
+# From LTX-2-3-AUTO_INSTALL-RUNPOD-V2.sh. LTXVideo is pinned to the
+# workflow-compatible commit from the reference script.
+ComfyUI-Manager https://github.com/ltdrdata/ComfyUI-Manager.git
+ComfyUI-GGUF https://github.com/city96/ComfyUI-GGUF.git
+rgthree-comfy https://github.com/rgthree/rgthree-comfy.git
+ComfyUI-Easy-Use https://github.com/yolain/ComfyUI-Easy-Use.git
+ComfyUI-KJNodes https://github.com/kijai/ComfyUI-KJNodes.git
+RES4LYF https://github.com/ClownsharkBatwing/RES4LYF.git
+ComfyUI-LTXVideo https://github.com/Lightricks/ComfyUI-LTXVideo.git cd5d371518afb07d6b3641be8012f644f25269fc
+ComfyUI-Custom-Scripts https://github.com/pythongosssss/ComfyUI-Custom-Scripts.git
+ComfyUI-VideoHelperSuite https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite.git
+ComfyUI-WanVideoWrapper https://github.com/kijai/ComfyUI-WanVideoWrapper.git
+ComfyUI-Impact-Pack https://github.com/ltdrdata/ComfyUI-Impact-Pack.git
+Comfyui_TTP_Toolset https://github.com/TTPlanetPig/Comfyui_TTP_Toolset.git
+ComfyMath https://github.com/evanspearman/ComfyMath.git
+WhatDreamsCost-ComfyUI https://github.com/WhatDreamsCost/WhatDreamsCost-ComfyUI.git

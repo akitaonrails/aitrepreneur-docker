@@ -1,0 +1,10 @@
+# <path relative to models/> <url>
+# MODEL_VERSION Q8_0 from the reference script (the 22B model, ~23 GB).
+text_encoders/ltx-2.3_text_projection_bf16.safetensors https://huggingface.co/Aitrepreneur/FLX/resolve/main/ltx-2.3_text_projection_bf16.safetensors?download=true
+text_encoders/gemma_3_12B_it_fp4_mixed.safetensors https://huggingface.co/Aitrepreneur/FLX/resolve/main/gemma_3_12B_it_fp4_mixed.safetensors?download=true
+vae/LTX23_audio_vae_bf16.safetensors https://huggingface.co/Aitrepreneur/FLX/resolve/main/LTX23_audio_vae_bf16.safetensors?download=true
+vae/LTX23_video_vae_bf16.safetensors https://huggingface.co/Aitrepreneur/FLX/resolve/main/LTX23_video_vae_bf16.safetensors?download=true
+unet/ltx-2.3-22b-dev-Q8_0.gguf https://huggingface.co/Aitrepreneur/FLX/resolve/main/ltx-2.3-22b-dev-Q8_0.gguf?download=true
+latent_upscale_models/ltx-2.3-spatial-upscaler-x2-1.1.safetensors https://huggingface.co/Aitrepreneur/FLX/resolve/main/ltx-2.3-spatial-upscaler-x2-1.1.safetensors?download=true
+loras/ltx-2.3-22b-distilled-lora-384-1.1.safetensors https://huggingface.co/Aitrepreneur/FLX/resolve/main/ltx-2.3-22b-distilled-lora-384-1.1.safetensors?download=true
+loras/ltx-2-19b-ic-lora-detailer.safetensors https://huggingface.co/Aitrepreneur/FLX/resolve/main/ltx-2-19b-ic-lora-detailer.safetensors?download=true

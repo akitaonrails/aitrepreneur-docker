@@ -107,7 +107,7 @@ EXPOSE 8675
 ENV TORCH_HOME=/data/cache/torch \
     XDG_CACHE_HOME=/data/cache/xdg
 
-COPY scripts/entrypoint.sh /entrypoint.sh
+COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
 ENTRYPOINT ["/entrypoint.sh"]

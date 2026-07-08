@@ -1,109 +1,121 @@
-# ai-toolkit — local Docker (NVIDIA GPU)
+# Aitrepreneur RunPod stacks — local Docker (NVIDIA GPU)
 
-Runs [ostris/ai-toolkit](https://github.com/ostris/ai-toolkit) (LoRA training UI,
-used for FLUX / Krea and friends) in a local Docker container instead of a
-RunPod pod. It installs the same stack as the RunPod one-click script kept in
-[`docs/reference/`](docs/reference/), but as a reproducible image: pinned
-versions, persistent data on the host, one command to run or upgrade.
+Runs the tools from Aitrepreneur's RunPod one-click scripts (kept verbatim in
+[`docs/reference/`](docs/reference/)) locally, as reproducible Docker images:
+pinned versions, persistent data on the host/NAS, one command to run or
+upgrade each app.
+
+| Service | What it is | Port | Start |
+|---|---|---|---|
+| `ai-toolkit` | [ostris/ai-toolkit](https://github.com/ostris/ai-toolkit) LoRA training UI | 8675 | `make up` |
+| `krea2` | ComfyUI + Krea 2 image generation | 8188 | `make krea2` |
+| `ideogram` | ComfyUI + Ideogram 4 (typography/design) | 8189 | `make ideogram` |
+| `ltx` | ComfyUI + LTX-2.3 video generation | 8190 | `make ltx` |
+
+Each app gets its own container because their Python stacks conflict
+(different torch/transformers pins). They share the NAS models tree, so a
+model downloaded once is available to all.
 
 ## Prerequisites
 
-- NVIDIA driver + [nvidia-container-toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html)
-  (verify with `make gpu-check` after building). Compose uses the legacy
-  `nvidia` runtime rather than `gpus: all` because the latter reads the CDI
-  spec (`/etc/cdi/nvidia.yaml`), which breaks after driver updates until you
-  regenerate it (`sudo nvidia-ctk cdi generate --output=/etc/cdi/nvidia.yaml`).
-- Docker with Compose v2
-- ~30 GB free disk for the image + whatever your models need under `./data/`
-
-Defaults target Blackwell / RTX 50xx GPUs (`cu128` PyTorch wheels). For older
-cards set `CUDA_STREAM=cu126` in `.env`.
+- NVIDIA driver + nvidia-container-toolkit (verify with `make gpu-check`).
+  Compose uses the legacy `nvidia` runtime rather than `gpus: all` because the
+  latter reads the CDI spec (`/etc/cdi/nvidia.yaml`), which breaks after
+  driver updates until regenerated
+  (`sudo nvidia-ctk cdi generate --output=/etc/cdi/nvidia.yaml`).
+- Docker with Compose v2; ~20 GB image disk per app.
+- The NAS mounted at `/mnt/gigachad` (models land there — LTX alone is ~40 GB).
+- One RTX 5090 = run one heavy app at a time (`make stop-krea2` before
+  `make ltx`, etc.). The containers themselves can coexist.
 
 ## Quick start
 
 ```bash
-make setup     # creates .env — edit it to add your HF_TOKEN
-make build     # ~10-20 min first time (torch + deps + UI build)
-make up        # UI at http://localhost:8675
+make setup          # creates .env — edit it to add your HF_TOKEN
+make build          # builds all four images (long first time)
+make up             # ai-toolkit at http://localhost:8675
+make krea2          # ComfyUI+Krea2 at http://localhost:8188
 ```
 
-Day to day: `make up`, `make down`, `make logs`, `make shell`, `make gpu-check`.
+Model files are **not** in the images: each ComfyUI app checks
+`comfyui/apps/<app>/models.txt` at container start and downloads only what is
+missing from the NAS models tree. First start of an app therefore takes a
+while — watch with `make logs-krea2`.
+
+Day to day: `make up` / `make krea2` / `make ideogram` / `make ltx`,
+`make stop-<app>`, `make logs-<app>`, `make shell-<app>`, `make down`.
 
 ## Data layout
 
-Everything stateful lives outside the container. Rebuilding or upgrading never
-touches your data.
+Everything stateful lives outside the containers. Rebuilding or upgrading
+never touches data, and nothing big can land in a container's writable layer
+(all caches are env-redirected onto volumes).
 
 ```
-./data/                                  # small, local (gitignored)
-├── datasets/    # training datasets (drop image+caption folders here)
-├── outputs/     # trained LoRAs, samples, checkpoints
-└── db/          # the UI's SQLite job database (aitk_db.db)
+./data/<app>/                            # small, local (gitignored)
+    output/, input/, user/    ComfyUI apps: results, uploads, UI state
+    datasets/, outputs/, db/  ai-toolkit: training data, LoRAs, job db
 
 /mnt/gigachad/comfyui/models/            # big, on the NAS
-├── hf-cache/    # base models ai-toolkit downloads from Hugging Face
-├── aitk-cache/  # torch.hub + misc library caches (CLIP, LPIPS, ...)
-└── ...          # your existing ComfyUI models, mounted read-only at
-                 # /comfyui-models inside the container
+    diffusion_models/, text_encoders/, vae/, loras/, unet/, ...
+                 # shared ComfyUI-layout tree: your existing models plus
+                 # whatever the apps download (skip-if-exists)
+    hf-cache/    # ai-toolkit's Hugging Face cache
+    aitk-cache/  # torch.hub + misc library caches, shared by all apps
+
+/mnt/gigachad/comfyui/ideogram-templates/  # extracted reference templates
 ```
 
-Every path the apps download to (`HF_HOME`, `TORCH_HOME`, `XDG_CACHE_HOME`,
-`~/.cache`) is redirected onto these mounts, so nothing large can accumulate
-in the container's writable layer — `docker diff ai-toolkit` should stay
-near-empty. Datasets and outputs are local by default (LoRAs are small and
-local disk is faster); set `DATASETS_DIR`/`OUTPUTS_DIR` in `.env` to move
-them to the NAS.
+The `ideogram` container also seeds the bundled Ultra workflow into its UI
+(`comfyui/apps/ideogram/workflows/`) and mounts the template images read-only
+at `input/templates`. ai-toolkit mounts the NAS models tree read-only at
+`/comfyui-models` so training configs can reference existing checkpoints.
 
-Downloaded base models (FLUX/Krea checkpoints, text encoders — tens of GB
-each) go to the NAS via `HF_CACHE_DIR`. Note they land in Hugging Face's own
-cache layout (`models--org--name/...`), not ComfyUI's folder convention.
+## How an app is defined
 
-The read-only `/comfyui-models` mount lets a training config reference a
-checkpoint you already have, e.g. a local path like
-`/comfyui-models/diffusion_models/whatever.safetensors` instead of a HF repo
-id, avoiding a re-download.
+Each ComfyUI app is a directory under `comfyui/apps/<name>/` — that's the
+whole upgrade surface:
 
-Inside the container the data dirs are symlinked to where ai-toolkit expects
-them (`/app/ai-toolkit/datasets`, `/app/ai-toolkit/output`, repo-root db) by
-`scripts/entrypoint.sh`.
+| File | Purpose |
+|---|---|
+| `nodes.txt` | custom nodes baked into the image (`folder url [git-ref]`) |
+| `constraints.txt` | pip pins protected during every install |
+| `extras.txt` | extra pip packages the workflows need |
+| `models.txt` | model files fetched at container start (skip-if-exists) |
+| `check.sh` | optional build-time sanity check |
+| `workflows/` | workflow JSONs seeded into the UI |
 
-## Configuration
-
-All knobs live in `.env` (see `.env.example` for the full list):
-
-| Variable | Default | Purpose |
-|---|---|---|
-| `AI_TOOLKIT_REF` | `main` | Git ref of ai-toolkit to build |
-| `CUDA_STREAM` | `cu128` | PyTorch CUDA wheels (`cu126` for pre-RTX-50xx) |
-| `UI_PORT` | `8675` | Host port for the web UI |
-| `HF_CACHE_DIR` | `/mnt/gigachad/comfyui/models/hf-cache` | Where downloaded base models are stored |
-| `COMFYUI_MODELS_DIR` | `/mnt/gigachad/comfyui/models` | Existing models, mounted read-only at `/comfyui-models` |
-| `HF_TOKEN` | — | Hugging Face token for gated models |
-| `AI_TOOLKIT_AUTH` | empty | Optional UI password |
-
-Deeper pins (torch/node/CUDA base image versions) are build args at the top of
-the `Dockerfile`. See [`docs/UPGRADING.md`](docs/UPGRADING.md).
+Add a node → append to `nodes.txt`, `make upgrade-<app>`. New model file →
+append to `models.txt`, restart the app. ComfyUI-Manager works in the UI for
+experiments, but anything it installs lives in the container layer and
+disappears on rebuild — promote keepers into `nodes.txt`. A pip blacklist is
+seeded into each app's user dir so the Manager can't replace the locked
+torch/transformers stack (same protection as the reference scripts).
 
 ## Upgrading
 
 ```bash
-make upgrade   # re-clones AI_TOOLKIT_REF, rebuilds, restarts
-make version   # show the exact ai-toolkit commit in the current image
+make upgrade-krea2   # rebuild one app from fresh upstream clones
+make upgrade         # rebuild everything
+make version         # upstream commits baked into each image
 ```
 
-Your datasets, outputs, models, and job database are untouched — the entrypoint
-re-applies any DB schema changes (`prisma db push`) on start.
+See [`docs/UPGRADING.md`](docs/UPGRADING.md) for version-pin locations and
+the torch/CUDA compatibility notes.
 
-## How this differs from the RunPod script
+## Deviations from the reference scripts
 
-The reference script ([`docs/reference/AI-TOOLKIT_AUTO_INSTALL-RUNPOD_FAST-V2.sh`](docs/reference/AI-TOOLKIT_AUTO_INSTALL-RUNPOD_FAST-V2.sh))
-installs everything at pod boot into `/workspace`. Here the equivalent steps
-happen once at image build time instead:
-
-| RunPod script | This repo |
-|---|---|
-| apt/node/torch installed on every fresh pod | baked into the image |
-| GPU detection picks cu126/cu128 at runtime | `CUDA_STREAM` in `.env` (default cu128 for RTX 50xx) |
-| torch 2.7.0 (script's era) | torch 2.9.1, matching current upstream `main` |
-| `/workspace` persistence + install marker | `./data/` bind mount; image is immutable |
-| `git pull` on restart (moving target) | explicit `make upgrade`, commit recorded in image |
+- **torch cu128 everywhere.** The ideogram/ltx scripts pin torch 2.4.0+cu121,
+  which has no RTX 50xx (Blackwell/sm_120) kernels and cannot run on this
+  machine's GPU. All ComfyUI apps here use torch 2.8.0+cu128 (the krea2
+  script's own pin); xformers is dropped for ltx (cu121-only build) in favor
+  of ComfyUI's native PyTorch attention.
+- **Install at build, not at boot.** The scripts install apt/pip/nodes on
+  every fresh pod; here that's baked into images, and pods'/containers' state
+  can't drift — rebuilding is the only way anything changes.
+- **Models on the NAS, atomically.** Downloads go to `.part` files and are
+  renamed only when complete, so an interrupted download is never mistaken
+  for a finished model (the scripts' skip-if-exists check has that flaw).
+- **krea2 node fix.** The reference script clones `ComfyUI-Krea2T-Enhancer`
+  but forgot to list it in `REQUIRED_NODES`, so its Python requirements were
+  never installed. Here every cloned node gets its requirements.

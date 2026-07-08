@@ -1,0 +1,10 @@
+# Pins from LTX-2-3-AUTO_INSTALL-RUNPOD-V2.sh (torch lines are prepended from
+# the Dockerfile ARGs at build time). The script's xformers 0.0.27.post2 pin
+# is dropped: it only exists for torch 2.4/cu121, which has no RTX 50xx
+# support — ComfyUI's built-in PyTorch attention is used instead.
+transformers==4.51.3
+tokenizers>=0.21,<0.22
+timm==1.0.15
+opencv-python-headless==4.12.0.88
+Pillow>=11.0.0
+numpy>=1.26,<3
