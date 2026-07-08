@@ -28,19 +28,32 @@ Day to day: `make up`, `make down`, `make logs`, `make shell`, `make gpu-check`.
 
 ## Data layout
 
-Everything stateful lives in `./data/` on the host (gitignored). The container
-is disposable; rebuilding or upgrading never touches your data.
+Everything stateful lives outside the container. Rebuilding or upgrading never
+touches your data.
 
 ```
-data/
+./data/                                  # small, local (gitignored)
 ├── datasets/    # training datasets (drop image+caption folders here)
 ├── outputs/     # trained LoRAs, samples, checkpoints
-├── db/          # the UI's SQLite job database (aitk_db.db)
-└── hf-cache/    # Hugging Face model cache (large!)
+└── db/          # the UI's SQLite job database (aitk_db.db)
+
+/mnt/gigachad/comfyui/models/            # big, on the NAS
+├── hf-cache/    # base models ai-toolkit downloads from Hugging Face
+└── ...          # your existing ComfyUI models, mounted read-only at
+                 # /comfyui-models inside the container
 ```
 
-Inside the container these are symlinked to where ai-toolkit expects them
-(`/app/ai-toolkit/datasets`, `/app/ai-toolkit/output`, repo-root db) by
+Downloaded base models (FLUX/Krea checkpoints, text encoders — tens of GB
+each) go to the NAS via `HF_CACHE_DIR`. Note they land in Hugging Face's own
+cache layout (`models--org--name/...`), not ComfyUI's folder convention.
+
+The read-only `/comfyui-models` mount lets a training config reference a
+checkpoint you already have, e.g. a local path like
+`/comfyui-models/diffusion_models/whatever.safetensors` instead of a HF repo
+id, avoiding a re-download.
+
+Inside the container the data dirs are symlinked to where ai-toolkit expects
+them (`/app/ai-toolkit/datasets`, `/app/ai-toolkit/output`, repo-root db) by
 `scripts/entrypoint.sh`.
 
 ## Configuration
@@ -52,6 +65,8 @@ All knobs live in `.env` (see `.env.example` for the full list):
 | `AI_TOOLKIT_REF` | `main` | Git ref of ai-toolkit to build |
 | `CUDA_STREAM` | `cu128` | PyTorch CUDA wheels (`cu126` for pre-RTX-50xx) |
 | `UI_PORT` | `8675` | Host port for the web UI |
+| `HF_CACHE_DIR` | `/mnt/gigachad/comfyui/models/hf-cache` | Where downloaded base models are stored |
+| `COMFYUI_MODELS_DIR` | `/mnt/gigachad/comfyui/models` | Existing models, mounted read-only at `/comfyui-models` |
 | `HF_TOKEN` | — | Hugging Face token for gated models |
 | `AI_TOOLKIT_AUTH` | empty | Optional UI password |
 

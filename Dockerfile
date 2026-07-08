@@ -68,8 +68,10 @@ RUN pip install --no-cache-dir --break-system-packages \
 
 WORKDIR /app/ai-toolkit
 
-# Python requirements from the pinned ref (layer busts when AI_TOOLKIT_REF changes).
+# Python requirements from the pinned ref (layer busts when AI_TOOLKIT_REF
+# changes). requirements.txt pulls in requirements_base.txt via `-r`.
 RUN curl -fsSL "https://raw.githubusercontent.com/ostris/ai-toolkit/${AI_TOOLKIT_REF}/requirements.txt" -o requirements.txt && \
+    curl -fsSL "https://raw.githubusercontent.com/ostris/ai-toolkit/${AI_TOOLKIT_REF}/requirements_base.txt" -o requirements_base.txt && \
     pip install --no-cache-dir --break-system-packages -r requirements.txt
 
 # UI node_modules from the pinned ref's lockfile.
