@@ -31,6 +31,8 @@ model downloaded once is available to all.
 ## Quick start
 
 ```bash
+git clone git@github.com:akitaonrails/aitrepreneur-docker.git
+cd aitrepreneur-docker
 make setup          # creates .env — edit it to add your HF_TOKEN
 make build          # builds all four images (long first time)
 make up             # ai-toolkit at http://localhost:8675
