@@ -8,21 +8,31 @@ services:
         CACHEBUST: ${CACHEBUST:-0}
     image: ai-toolkit:local
     container_name: ai-toolkit
-    gpus: all
+    # Legacy nvidia runtime instead of `gpus: all`: the latter reads the CDI
+    # spec (/etc/cdi/nvidia.yaml), which goes stale on every driver update;
+    # the runtime enumerates driver files at container start instead.
+    runtime: nvidia
     # PyTorch dataloader workers use shared memory; the docker default (64MB)
     # is far too small for image training batches.
     ipc: host
     ports:
       - "${UI_PORT:-8675}:8675"
     volumes:
-      # Persistent state: datasets, outputs, job db.
+      # Job db + anything not covered by a more specific mount below.
       - ./data:/data
+      # Training inputs/results — local by default, point at the NAS in .env
+      # if full-checkpoint outputs get big.
+      - ${DATASETS_DIR:-./data/datasets}:/data/datasets
+      - ${OUTPUTS_DIR:-./data/outputs}:/data/outputs
       # Downloaded base models (HF cache) — large, kept on the NAS.
       - ${HF_CACHE_DIR:-./data/hf-cache}:/data/hf-cache
+      # torch.hub + misc library caches (aux models like CLIP/LPIPS) — NAS.
+      - ${AUX_CACHE_DIR:-./data/cache}:/data/cache
       # Existing ComfyUI models, read-only, so training configs can point at
       # checkpoints you already have (visible as /comfyui-models in the UI).
       - ${COMFYUI_MODELS_DIR:-/mnt/gigachad/comfyui/models}:/comfyui-models:ro
     environment:
+      NVIDIA_VISIBLE_DEVICES: all
       HF_TOKEN: ${HF_TOKEN:-}
       # Optional UI password. Leave empty for no auth (fine on localhost).
       AI_TOOLKIT_AUTH: ${AI_TOOLKIT_AUTH:-}

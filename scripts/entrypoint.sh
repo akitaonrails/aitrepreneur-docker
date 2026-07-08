@@ -8,7 +8,16 @@ set -euo pipefail
 APP_DIR=/app/ai-toolkit
 DATA_DIR=/data
 
-mkdir -p "$DATA_DIR/db" "$DATA_DIR/datasets" "$DATA_DIR/outputs" "$DATA_DIR/hf-cache"
+mkdir -p "$DATA_DIR/db" "$DATA_DIR/datasets" "$DATA_DIR/outputs" \
+         "$DATA_DIR/hf-cache" "$DATA_DIR/cache/torch" "$DATA_DIR/cache/xdg"
+
+# Libraries that ignore XDG_CACHE_HOME and hardcode ~/.cache must still end
+# up on the volume, never in the container layer.
+if [[ -d /root/.cache && ! -L /root/.cache ]]; then
+  cp -an /root/.cache/. "$DATA_DIR/cache/xdg/" 2>/dev/null || true
+  rm -rf /root/.cache
+fi
+ln -sfn "$DATA_DIR/cache/xdg" /root/.cache
 
 # --- SQLite job database (the UI expects it at the repo root) ---------------
 # A build may have seeded an empty db inside the image; keep the volume's copy

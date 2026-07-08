@@ -9,7 +9,10 @@ versions, persistent data on the host, one command to run or upgrade.
 ## Prerequisites
 
 - NVIDIA driver + [nvidia-container-toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html)
-  (verify with `docker run --rm --gpus all nvidia/cuda:12.8.1-base-ubuntu24.04 nvidia-smi`)
+  (verify with `make gpu-check` after building). Compose uses the legacy
+  `nvidia` runtime rather than `gpus: all` because the latter reads the CDI
+  spec (`/etc/cdi/nvidia.yaml`), which breaks after driver updates until you
+  regenerate it (`sudo nvidia-ctk cdi generate --output=/etc/cdi/nvidia.yaml`).
 - Docker with Compose v2
 - ~30 GB free disk for the image + whatever your models need under `./data/`
 
@@ -39,9 +42,17 @@ touches your data.
 
 /mnt/gigachad/comfyui/models/            # big, on the NAS
 ├── hf-cache/    # base models ai-toolkit downloads from Hugging Face
+├── aitk-cache/  # torch.hub + misc library caches (CLIP, LPIPS, ...)
 └── ...          # your existing ComfyUI models, mounted read-only at
                  # /comfyui-models inside the container
 ```
+
+Every path the apps download to (`HF_HOME`, `TORCH_HOME`, `XDG_CACHE_HOME`,
+`~/.cache`) is redirected onto these mounts, so nothing large can accumulate
+in the container's writable layer — `docker diff ai-toolkit` should stay
+near-empty. Datasets and outputs are local by default (LoRAs are small and
+local disk is faster); set `DATASETS_DIR`/`OUTPUTS_DIR` in `.env` to move
+them to the NAS.
 
 Downloaded base models (FLUX/Krea checkpoints, text encoders — tens of GB
 each) go to the NAS via `HF_CACHE_DIR`. Note they land in Hugging Face's own

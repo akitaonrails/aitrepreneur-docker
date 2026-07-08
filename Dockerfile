@@ -100,6 +100,13 @@ RUN cd ui && npm run update_db && npm run build
 
 EXPOSE 8675
 
+# Nothing big may land in the container's writable layer: every model/cache
+# download path is redirected under /data, which is volume-mounted (NAS for
+# the large caches). Declared last so changes don't bust the heavy layers
+# above. The entrypoint also symlinks /root/.cache for libs that hardcode it.
+ENV TORCH_HOME=/data/cache/torch \
+    XDG_CACHE_HOME=/data/cache/xdg
+
 COPY scripts/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
