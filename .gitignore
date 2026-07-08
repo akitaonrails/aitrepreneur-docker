@@ -4,5 +4,8 @@
 # Runtime state: datasets, outputs, job db, HF model cache (can be huge)
 /data/
 
-# Large binary bundle; extracted to the NAS (see docs/reference/README.md)
-docs/reference/IDEOGRAM-TEMPLATES.zip
+# Aitrepreneur's paid Patreon content — never distribute. Keep local copies
+# here (see docs/reference/README.md), but only README.md is tracked.
+docs/reference/*
+!docs/reference/README.md
+comfyui/apps/ideogram/workflows/*.json
