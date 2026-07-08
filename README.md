@@ -1,12 +1,18 @@
 # Aitrepreneur RunPod stacks — local Docker (NVIDIA GPU)
 
-Runs the tools from Aitrepreneur's RunPod one-click scripts locally, as
-reproducible Docker images: pinned versions, persistent data on the host/NAS,
-one command to run or upgrade each app. The original scripts are paid Patreon
-content and are **not** part of this repository — see
-[`docs/reference/README.md`](docs/reference/README.md) for what goes where if
-you have them (only the Ideogram workflow JSON is worth placing; everything
-else is optional reference).
+Runs the tools from [Aitrepreneur](https://www.youtube.com/@Aitrepreneur)'s
+RunPod one-click scripts locally, as reproducible Docker images: pinned
+versions, persistent data on the host/NAS, one command to run or upgrade each
+app.
+
+All credit for the stack selection, model curation, version pinning research,
+and workflows goes to Aitrepreneur — this repo only translates his work into
+Docker form. His scripts, workflows, and templates are **paid Patreon content**
+and are **not** included here: if you find this useful, please support him at
+**<https://www.patreon.com/c/aitrepreneur/home>** — that's also where you get
+the original files. See [`docs/reference/README.md`](docs/reference/README.md)
+for where to place them if you have access (only the Ideogram workflow JSON is
+actually used by the build; the rest is optional reference).
 
 | Service | What it is | Port | Start |
 |---|---|---|---|
