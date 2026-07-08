@@ -1,0 +1,24 @@
+services:
+  ai-toolkit:
+    build:
+      context: .
+      args:
+        AI_TOOLKIT_REF: ${AI_TOOLKIT_REF:-main}
+        CUDA_STREAM: ${CUDA_STREAM:-cu128}
+        CACHEBUST: ${CACHEBUST:-0}
+    image: ai-toolkit:local
+    container_name: ai-toolkit
+    gpus: all
+    # PyTorch dataloader workers use shared memory; the docker default (64MB)
+    # is far too small for image training batches.
+    ipc: host
+    ports:
+      - "${UI_PORT:-8675}:8675"
+    volumes:
+      # All persistent state: datasets, outputs, job db, HF model cache.
+      - ./data:/data
+    environment:
+      HF_TOKEN: ${HF_TOKEN:-}
+      # Optional UI password. Leave empty for no auth (fine on localhost).
+      AI_TOOLKIT_AUTH: ${AI_TOOLKIT_AUTH:-}
+    restart: unless-stopped

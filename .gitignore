@@ -1,0 +1,5 @@
+# Local secrets / overrides
+.env
+
+# Runtime state: datasets, outputs, job db, HF model cache (can be huge)
+/data/
