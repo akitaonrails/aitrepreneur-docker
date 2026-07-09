@@ -32,7 +32,8 @@ fi
 ln -sfn "$DATA_DIR/cache/xdg" /root/.cache
 
 # --- model downloads (skip existing; .part suffix so an interrupted download
-# --- is never mistaken for a finished file on the next start) ----------------
+# --- is never mistaken for a finished file, and -C - resumes it — plain
+# --- --retry skips errors like HTTP/2 stream resets, hence --retry-all-errors)
 if [[ -f "$APP_DIR/models.txt" ]]; then
   echo "──── Checking model files"
   while read -r relpath url; do
@@ -44,7 +45,7 @@ if [[ -f "$APP_DIR/models.txt" ]]; then
     fi
     echo " [DL]  $relpath"
     mkdir -p "$(dirname "$target")"
-    curl -L --fail --retry 5 --retry-delay 5 -o "$target.part" "$url"
+    curl -L --fail -C - --retry 5 --retry-delay 5 --retry-all-errors -o "$target.part" "$url"
     mv "$target.part" "$target"
   done < "$APP_DIR/models.txt"
 fi
