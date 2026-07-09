@@ -3,3 +3,7 @@
 # whole baseline as constraints; the load-bearing pins were opencv/pillow.
 opencv-python-headless==4.12.0.88
 Pillow>=11.0.0
+# opencv 4.12 needs numpy>=2 while the image starts on numpy 1.x; without an
+# explicit pin, pip backtracks on ComfyUI_essentials' deps (rembg, numba)
+# until ResolutionTooDeep. 2.2.x is the newest stream numba accepts.
+numpy==2.2.6
