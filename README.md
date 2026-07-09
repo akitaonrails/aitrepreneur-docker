@@ -14,12 +14,15 @@ the original files. See [`docs/reference/README.md`](docs/reference/README.md)
 for where to place them if you have access (only the Ideogram workflow JSON is
 actually used by the build; the rest is optional reference).
 
-| Service | What it is | Port | Start |
+| Service | What it is | Start | UI |
 |---|---|---|---|
-| `ai-toolkit` | [ostris/ai-toolkit](https://github.com/ostris/ai-toolkit) LoRA training UI | 8675 | `make up` |
-| `krea2` | ComfyUI + Krea 2 image generation | 8188 | `make krea2` |
-| `ideogram` | ComfyUI + Ideogram 4 (typography/design) | 8189 | `make ideogram` |
-| `ltx` | ComfyUI + LTX-2.3 video generation | 8190 | `make ltx` |
+| `ai-toolkit` | [ostris/ai-toolkit](https://github.com/ostris/ai-toolkit) LoRA training UI | `make up` | <http://localhost:8675> |
+| `krea2` | ComfyUI + Krea 2 image generation | `make krea2` | <http://localhost:8188> |
+| `ideogram` | ComfyUI + Ideogram 4 (typography/design) | `make ideogram` | <http://localhost:8189> |
+| `ltx` | ComfyUI + LTX-2.3 video generation | `make ltx` | <http://localhost:8190> |
+
+Ports are the defaults; override them in `.env` (`AI_TOOLKIT_PORT`,
+`KREA2_PORT`, `IDEOGRAM_PORT`, `LTX_PORT`).
 
 Each app gets its own container because their Python stacks conflict
 (different torch/transformers pins). They share the NAS models tree, so a
