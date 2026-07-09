@@ -67,6 +67,22 @@ needs to move when a new GPU generation or torch stream requires a newer CUDA
 toolkit. `devel` is intentional: some deps compile CUDA extensions at
 install time.
 
+## Moving or renaming this repo
+
+Container bind mounts record the repo's absolute path at `docker compose up`
+time. After a rename/move, running containers keep working (mounts follow
+inodes), but on their next restart Docker re-resolves the old path and
+recreates it as empty root-owned directories — the app silently loses its
+`data/` view. Compose also can't manage containers created under the old
+project name. Right after renaming, recreate everything:
+
+```bash
+docker rm -f ai-toolkit comfyui-krea2 comfyui-ideogram comfyui-ltx 2>/dev/null
+docker compose up -d ai-toolkit   # plus make krea2 / ideogram / ltx as needed
+```
+
+Data and models are untouched — everything lives on volumes.
+
 ## Checking an upgrade worked
 
 ```bash
